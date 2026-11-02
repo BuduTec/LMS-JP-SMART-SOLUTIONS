@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useActionState, useEffect } from 'react';
+import React, { useActionState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { signIn } from '@/actions/auth';
@@ -11,7 +11,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { AlertCircle, Lock, Mail, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get('redirect') || '/student/dashboard';
   const errorParam = searchParams.get('error');
@@ -112,5 +112,20 @@ export default function LoginPage() {
         </p>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="border border-[#D5E1ED] p-12 text-center bg-white">
+          <div className="h-8 w-8 border-4 border-jpblue border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-jpmuted mt-3">Loading authentication portal...</p>
+        </Card>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 }

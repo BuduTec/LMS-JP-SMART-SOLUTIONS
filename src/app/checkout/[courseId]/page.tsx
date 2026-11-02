@@ -7,7 +7,7 @@ import Script from 'next/script';
 import { initiatePayment } from '@/actions/payment';
 import { formatCurrency } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle2, Lock, ArrowRight, CreditCard, Sparkles } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Lock, ArrowRight, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 declare global {
@@ -38,7 +38,6 @@ export default function CheckoutPage() {
           const data = await res.json();
           setCourse(data);
         } else {
-          // Fallback course info
           setCourse({
             id: courseId,
             title: 'Technical Masterclass',
@@ -71,22 +70,21 @@ export default function CheckoutPage() {
         return;
       }
 
-      // If in dev mode without Paystack public key or test mode
       if (!initResult.publicKey || !window.PaystackPop) {
         toast('Simulating local transaction verification...', { icon: '💳' });
-        router.push(`/student/checkout/verify?ref=${encodeURIComponent(initResult.reference)}`);
+        router.push(`/checkout/verify?ref=${encodeURIComponent(initResult.reference)}`);
         return;
       }
 
       const handler = window.PaystackPop.setup({
         key: initResult.publicKey,
         email: initResult.email,
-        amount: Math.round(initResult.amount * 100), // amount in kobo
+        amount: Math.round(initResult.amount * 100),
         currency: initResult.currency,
         ref: initResult.reference,
         callback: function (response: any) {
           toast.success('Payment completed! Verifying your enrolment...');
-          router.push(`/student/checkout/verify?ref=${encodeURIComponent(response.reference)}`);
+          router.push(`/checkout/verify?ref=${encodeURIComponent(response.reference)}`);
         },
         onClose: function () {
           toast('Checkout window closed.');
@@ -122,7 +120,6 @@ export default function CheckoutPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
-        {/* Order Details (3 cols) */}
         <div className="md:col-span-3 space-y-6">
           <Card className="border border-[#D5E1ED]">
             <CardHeader className="pb-3">
@@ -175,7 +172,6 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        {/* Payment Action (2 cols) */}
         <div className="md:col-span-2 space-y-6">
           <Card className="border border-[#D5E1ED] shadow-jphover bg-white">
             <CardHeader className="pb-4">

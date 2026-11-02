@@ -11,11 +11,13 @@ import {
   Lock,
   ArrowRight,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 import { formatCurrency, formatDuration } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { SITE_CONFIG } from '@/lib/constants';
 import { Course, Module, Lesson } from '@/types';
+
+export const dynamic = 'force-dynamic';
 
 interface CourseDetailPageProps {
   params: Promise<{
@@ -27,13 +29,13 @@ export async function generateMetadata({
   params,
 }: CourseDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data: course } = await supabase
     .from('courses')
     .select('title, short_description, meta_title, meta_description, image_url')
     .eq('slug', slug)
-    .single();
+    .maybeSingle();
 
   if (!course) {
     return {
@@ -54,7 +56,7 @@ export async function generateMetadata({
 
 export default async function CourseDetailPage({ params }: CourseDetailPageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data: courseData } = await supabase
     .from('courses')
@@ -78,32 +80,13 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
       )
     `)
     .eq('slug', slug)
-    .single();
+    .maybeSingle();
 
   if (!courseData) {
     notFound();
   }
 
   const course = courseData as unknown as Course;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  let isEnrolled = false;
-  if (user) {
-    const { data: enrolment } = await supabase
-      .from('enrolments')
-      .select('id')
-      .eq('student_id', user.id)
-      .eq('course_id', course.id)
-      .eq('is_active', true)
-      .maybeSingle();
-
-    if (enrolment) {
-      isEnrolled = true;
-    }
-  }
 
   const sortedModules = ((course.modules || []) as Module[]).sort(
     (a, b) => a.sort_order - b.sort_order
@@ -203,7 +186,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
               />
             </div>
 
-            {course.learning_objectives && course.learning_objectives.length > 0 && (
+            {course.learning_objectives && course.learning_objectives.length > 0 && (`
               <div className="card-jp p-8 space-y-4">
                 <h2 className="text-xl font-bold text-jpdark">What You&apos;ll Learn</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
@@ -290,31 +273,6 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                 </div>
               )}
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="card-jp p-6 space-y-3">
-                <h3 className="font-bold text-base text-jpdark">Requirements</h3>
-                <ul className="space-y-2 text-xs text-jpmuted list-disc pl-4">
-                  {course.requirements && course.requirements.length > 0 ? (
-                    course.requirements.map((req, i) => <li key={i}>{req}</li>)
-                  ) : (
-                    <>
-                      <li>Basic understanding of electrical circuit theory</li>
-                      <li>Laptop with Windows for ETAP / software simulations</li>
-                      <li>Commitment to complete weekly engineering exercises</li>
-                    </>
-                  )}
-                </ul>
-              </div>
-
-              <div className="card-jp p-6 space-y-3">
-                <h3 className="font-bold text-base text-jpdark">Target Audience</h3>
-                <p className="text-xs text-jpmuted leading-relaxed">
-                  {course.target_audience ||
-                    'Electrical engineers, power system designers, facility engineers, utility engineers, and engineering students preparing for power sector roles.'}
-                </p>
-              </div>
-            </div>
           </div>
 
           <div className="lg:sticky lg:top-24 space-y-6">
@@ -331,23 +289,13 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                 </p>
               </div>
 
-              {isEnrolled ? (
-                <Link
-                  href={`/student/courses/${course.id}`}
-                  className="btn-primary w-full text-center flex items-center justify-center gap-2 py-3.5"
-                >
-                  <span>Go to Course</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              ) : (
-                <Link
-                  href={user ? `/checkout/${course.id}` : `/login?redirect=/checkout/${course.id}`}
-                  className="btn-primary w-full text-center flex items-center justify-center gap-2 py-3.5 font-bold shadow-lg"
-                >
-                  <span>Enrol Now</span>
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
+              <Link
+                href={`/checkout/${course.id}`}
+                className="btn-primary w-full text-center flex items-center justify-center gap-2 py-3.5 font-bold shadow-lg"
+              >
+                <span>Enrol Now</span>
+                <ArrowRight className="h-4 w-4" />
+              </Link>
 
               <div className="space-y-3 pt-4 border-t border-[#E1EBF5] text-xs text-jpdark/80">
                 <div className="flex items-center gap-2">

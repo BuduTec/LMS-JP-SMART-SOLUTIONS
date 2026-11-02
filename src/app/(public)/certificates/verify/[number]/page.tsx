@@ -6,6 +6,8 @@ import { ShieldCheck, XCircle, Award, Calendar, GraduationCap } from 'lucide-rea
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { SITE_CONFIG } from '@/lib/constants';
 
+export const dynamic = 'force-dynamic';
+
 interface VerifyCertificatePageProps {
   params: Promise<{
     number: string;
@@ -101,8 +103,8 @@ export default async function VerifyCertificatePage({ params }: VerifyCertificat
               No active certificate was found for registration number <strong>{number}</strong>. This credential may have been revoked or never existed.
             </p>
             <div className="pt-2">
-              <Link href="/" className="btn-primary text-xs py-2 px-5 font-bold">
-                Return to Academy Homepage
+              <Link href="/certificates/verify" className="btn-primary text-xs py-2 px-5 font-bold">
+                Search Another Number
               </Link>
             </div>
           </Card>
