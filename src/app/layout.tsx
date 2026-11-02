@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Toaster } from 'react-hot-toast';
+import { ToasterProvider } from '@/components/providers/ToasterProvider';
 import { SITE_CONFIG } from '@/lib/constants';
 
 const inter = Inter({
@@ -39,31 +39,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#071525',
-              color: '#fff',
-              borderRadius: '12px',
-              padding: '12px 18px',
-              fontSize: '14px',
-            },
-            success: {
-              iconTheme: {
-                primary: '#14B8D4',
-                secondary: '#071525',
-              },
-            },
-            error: {
-              iconTheme: {
-                primary: '#EF4444',
-                secondary: '#FFFFFF',
-              },
-            },
-          }}
-        />
+        <ToasterProvider />
       </body>
     </html>
   );

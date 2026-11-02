@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Stream } from '@cloudflare/stream-react';
-import { Play, Pause, Volume2, VolumeX, Maximize, AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface VideoPlayerProps {
@@ -26,7 +25,6 @@ export function VideoPlayer({
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const streamRef = useRef<any>(null);
   const progressTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch token on mount
@@ -66,35 +64,6 @@ export function VideoPlayer({
     };
   }, [lessonId]);
 
-  // Periodic progress saving every 30s
-  useEffect(() => {
-    progressTimerRef.current = setInterval(() => {
-      if (streamRef.current && typeof streamRef.current.currentTime === 'number') {
-        const currentTime = streamRef.current.currentTime;
-        const duration = streamRef.current.duration || 0;
-
-        if (currentTime > 0) {
-          fetch('/api/video/progress', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              lessonId,
-              courseId,
-              positionSeconds: currentTime,
-              durationSeconds: duration,
-            }),
-          }).catch(() => {});
-        }
-      }
-    }, 30000);
-
-    return () => {
-      if (progressTimerRef.current) {
-        clearInterval(progressTimerRef.current);
-      }
-    };
-  }, [lessonId, courseId]);
-
   if (loading) {
     return (
       <div className="w-full aspect-video bg-slate-950 flex flex-col items-center justify-center text-white space-y-3">
@@ -103,7 +72,9 @@ export function VideoPlayer({
     );
   }
 
-  if (error || !videoUid) {
+  const activeVideoId = tokenData?.videoUid || videoUid;
+
+  if (error || !activeVideoId) {
     return (
       <div className="w-full aspect-video bg-slate-950 flex flex-col items-center justify-center text-white p-6 text-center space-y-3">
         <AlertCircle className="h-10 w-10 text-amber-400" />
@@ -122,25 +93,30 @@ export function VideoPlayer({
     );
   }
 
+  // Cloudflare Stream universal responsive embed URL
+  const embedUrl = `https://iframe.videodelivery.net/${activeVideoId}?startTime=${Math.floor(
+    initialPosition
+  )}&autoplay=false&preload=true&poster=true`;
+
   return (
     <div className="relative aspect-video w-full bg-black group overflow-hidden select-none">
-      {/* Cloudflare Stream Player */}
-      <Stream
-        controls
-        responsive={true}
-        src={videoUid}
-        currentTime={initialPosition}
-        className="w-full h-full"
+      {/* Cloudflare Stream Universal Responsive Player */}
+      <iframe
+        src={embedUrl}
+        title="Lesson Video Stream"
+        className="w-full h-full border-0 absolute inset-0"
+        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+        allowFullScreen
       />
 
-      {/* Dynamic Watermark Overlay for intellectual property protection */}
+      {/* Dynamic Security Watermark Overlay */}
       <div className="absolute top-4 right-4 pointer-events-none z-30 opacity-40 hover:opacity-20 transition-opacity">
-        <span className="font-mono text-[11px] font-bold text-white bg-black/50 px-2.5 py-1 rounded-md backdrop-blur-sm tracking-wider">
+        <span className="font-mono text-[11px] font-bold text-white bg-black/60 px-2.5 py-1 rounded-md backdrop-blur-sm tracking-wider">
           {watermarkText} • JP SMART SOLUTIONS
         </span>
       </div>
 
-      <div className="absolute bottom-16 left-6 pointer-events-none z-30 opacity-25">
+      <div className="absolute bottom-14 left-6 pointer-events-none z-30 opacity-25">
         <span className="font-mono text-[10px] text-white">
           LICENSED TO: {watermarkText}
         </span>
