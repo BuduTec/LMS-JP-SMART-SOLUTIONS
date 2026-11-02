@@ -186,7 +186,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
               />
             </div>
 
-            {course.learning_objectives && course.learning_objectives.length > 0 && (`
+            {course.learning_objectives && course.learning_objectives.length > 0 && (
               <div className="card-jp p-8 space-y-4">
                 <h2 className="text-xl font-bold text-jpdark">What You&apos;ll Learn</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
