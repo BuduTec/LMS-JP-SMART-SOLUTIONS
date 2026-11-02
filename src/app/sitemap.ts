@@ -1,22 +1,9 @@
 import { MetadataRoute } from 'next';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/server';
 import { SITE_CONFIG } from '@/lib/constants';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const supabase = await createClient();
-  const baseUrl = SITE_CONFIG.url;
-
-  const { data: courses } = await supabase
-    .from('courses')
-    .select('slug, updated_at')
-    .eq('status', 'published');
-
-  const courseUrls: MetadataRoute.Sitemap = (courses || []).map((course) => ({
-    url: `${baseUrl}/courses/${course.slug}`,
-    lastModified: new Date(course.updated_at),
-    changeFrequency: 'weekly',
-    priority: 0.8,
-  }));
+  const baseUrl = SITE_CONFIG.url || 'https://academy.jpsmartsolutions.com';
 
   const staticUrls: MetadataRoute.Sitemap = [
     {
@@ -69,5 +56,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
-  return [...staticUrls, ...courseUrls];
+  try {
+    const supabase = createPublicClient();
+    const { data: courses } = await supabase
+      .from('courses')
+      .select('slug, updated_at')
+      .eq('status', 'published');
+
+    const courseUrls: MetadataRoute.Sitemap = (courses || []).map((course) => ({
+      url: `${baseUrl}/courses/${course.slug}`,
+      lastModified: course.updated_at ? new Date(course.updated_at) : new Date(),
+      changeFrequency: 'weekly',
+      priority: 0.8,
+    }));
+
+    return [...staticUrls, ...courseUrls];
+  } catch (err) {
+    console.error('[sitemap] Failed to fetch dynamic course routes at build time:', err);
+    return staticUrls;
+  }
 }
