@@ -1,1 +1,306 @@
-import React from 'react';\nimport Link from 'next/link';\nimport { ArrowRight, BookOpen, Award, CheckCircle2, Zap, Sparkles, Users } from 'lucide-react';\nimport { createPublicClient } from '@/lib/supabase/server';\nimport { CourseCard } from '@/components/CourseCard';\nimport { COURSE_CATEGORIES, SITE_CONFIG } from '@/lib/constants';\nimport { Course } from '@/types';\n\nexport const revalidate = 60;\n\nexport default async function HomePage() {\n  let courses: Course[] = [];\n  try {\n    const supabase = createPublicClient();\n    const { data: coursesData } = await supabase\n      .from('courses')\n      .select(`\n        *,\n        category:categories(id, name, slug)\n      `)\n      .order('sort_order', { ascending: true })\n      .limit(6);\n\n    courses = (coursesData as unknown as Course[]) || [];\n  } catch (err) {\n    console.error('[HomePage] Supabase fetch error:', err);\n  }\n\n  return (\n    <div className=\"space-y-20 pb-20\">\n      {/* Hero Section */}\n      <section className=\"relative hero-grid text-white pt-24 pb-28 overflow-hidden\">\n        <div className=\"container-jp relative z-10\">\n          <div className=\"max-w-3xl space-y-6\">\n            <div className=\"eyebrow bg-white/10 text-jpcyan border-white/20 backdrop-blur-md\">\n              <Sparkles className=\"h-3.5 w-3.5 text-jpcyan\" />\n              <span>JP SMART SOLUTIONS ACADEMY • PORT HARCOURT</span>\n            </div>\n\n            <h1 className=\"text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.12]\">\n              Learn the engineering skills{' '}\n              <span className=\"text-transparent bg-clip-text bg-gradient-to-r from-jpcyan to-blue-200\">\n                employers actually use.\n              </span>\n            </h1>\n\n            <p className=\"text-lg sm:text-xl text-slate-300 leading-relaxed max-w-2xl\">\n              Specialized hands-on technical masterclasses in ETAP software, power system analysis, relay protection engineering, and solar PV designs taught by experienced practicing engineers.\n            </p>\n\n            <div className=\"pt-4 flex flex-wrap items-center gap-4\">\n              <Link href=\"/courses\" className=\"btn-cyan text-base font-bold py-3.5 px-8 flex items-center gap-2 group shadow-lg\">\n                <span>Browse Courses</span>\n                <ArrowRight className=\"h-5 w-5 group-hover:translate-x-1 transition-transform\" />\n              </Link>\n              <Link\n                href=\"#how-it-works\"\n                className=\"btn-pill bg-white/10 hover:bg-white/20 text-white font-semibold py-3.5 px-7 border border-white/20 backdrop-blur-sm transition-colors\"\n              >\n                How It Works\n              </Link>\n            </div>\n\n            <div className=\"pt-8 flex flex-wrap items-center gap-6 text-xs text-slate-300\">\n              <div className=\"flex items-center gap-2\">\n                <CheckCircle2 className=\"h-4 w-4 text-jpcyan\" />\n                <span>Industry-standard ETAP software models</span>\n              </div>\n              <div className=\"flex items-center gap-2\">\n                <CheckCircle2 className=\"h-4 w-4 text-jpcyan\" />\n                <span>Nigerian grid & international IEC/IEEE standards</span>\n              </div>\n              <div className=\"flex items-center gap-2\">\n                <CheckCircle2 className=\"h-4 w-4 text-jpcyan\" />\n                <span>Practical calculation workbooks included</span>\n              </div>\n            </div>\n          </div>\n        </div>\n      </section>\n\n      {/* Stats Bar */}\n      <section className=\"-mt-12 relative z-20\">\n        <div className=\"container-jp\">\n          <div className=\"card-jp bg-white p-8 sm:p-10 shadow-jphover border border-[#D9E6F2]\">\n            <div className=\"grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-y sm:divide-y-0 sm:divide-x divide-[#E1EBF5]\">\n              <div className=\"space-y-1\">\n                <div className=\"text-3xl sm:text-4xl font-extrabold text-jpblue\">10+</div>\n                <div className=\"text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider\">\n                  Technical Courses\n                </div>\n                <p className=\"text-xs text-jpmuted\">Covering ETAP, Solar & Protection</p>\n              </div>\n              <div className=\"space-y-1 pt-6 sm:pt-0\">\n                <div className=\"text-3xl sm:text-4xl font-extrabold text-jpblue\">100%</div>\n                <div className=\"text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider\">\n                  Online & Flexible\n                </div>\n                <p className=\"text-xs text-jpmuted\">Learn at your own pace anytime</p>\n              </div>\n              <div className=\"space-y-1 pt-6 sm:pt-0\">\n                <div className=\"text-3xl sm:text-4xl font-extrabold text-jpblue\">Port Harcourt</div>\n                <div className=\"text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider\">\n                  Nigeria Based\n                </div>\n                <p className=\"text-xs text-jpmuted\">Physical & virtual support</p>\n              </div>\n              <div className=\"space-y-1 pt-6 sm:pt-0\">\n                <div className=\"text-3xl sm:text-4xl font-extrabold text-jpblue\">Hands-on</div>\n                <div className=\"text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider\">\n                  Practical Engineering\n                </div>\n                <p className=\"text-xs text-jpmuted\">Real single-line diagrams & studies</p>\n              </div>\n            </div>\n          </div>\n        </div>\n      </section>\n\n      {/* Featured Courses Section */}\n      <section className=\"container-jp\">\n        <div className=\"flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10\">\n          <div>\n            <div className=\"eyebrow mb-2\">Curriculum Spotlight</div>\n            <h2 className=\"text-3xl font-extrabold text-jpdark tracking-tight\">\n              Featured Engineering Courses\n            </h2>\n            <p className=\"mt-2 text-jpmuted text-sm sm:text-base max-w-xl\">\n              From power system optimization to relay coordination and utility-scale solar designs.\n            </p>\n          </div>\n          <Link href=\"/courses\" className=\"btn-outline self-start md:self-auto flex items-center gap-2\">\n            <span>Explore All 10 Courses</span>\n            <ArrowRight className=\"h-4 w-4\" />\n          </Link>\n        </div>\n\n        {courses.length > 0 ? (\n          <div className=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8\">\n            {courses.map((course) => (\n              <CourseCard key={course.id} course={course} />\n            ))}\n          </div>\n        ) : (\n          <div className=\"card-jp p-12 text-center space-y-3\">\n            <BookOpen className=\"h-10 w-10 text-jpblue mx-auto\" />\n            <h3 className=\"text-lg font-bold text-jpdark\">Courses Being Prepared</h3>\n            <p className=\"text-sm text-jpmuted max-w-md mx-auto\">\n              Our engineering curriculum is currently being updated for the upcoming session. Check back shortly.\n            </p>\n          </div>\n        )}\n      </section>\n\n      {/* Categories Grid */}\n      <section className=\"bg-jplight py-20 border-y border-[#E1EBF5]\">\n        <div className=\"container-jp\">\n          <div className=\"text-center max-w-2xl mx-auto mb-12\">\n            <div className=\"eyebrow mb-2\">Specializations</div>\n            <h2 className=\"text-3xl font-extrabold text-jpdark tracking-tight\">\n              Explore By Domain\n            </h2>\n            <p className=\"mt-2 text-jpmuted text-sm sm:text-base\">\n              Structured learning pathways designed specifically for electrical engineers, renewable energy developers, and technical technicians.\n            </p>\n          </div>\n\n          <div className=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6\">\n            {COURSE_CATEGORIES.map((cat) => (\n              <Link\n                key={cat.slug}\n                href={`/courses?category=${cat.slug}`}\n                className=\"card-jp card-jp-hover p-7 bg-white flex flex-col justify-between group\"\n              >\n                <div>\n                  <div className=\"h-12 w-12 rounded-2xl bg-jpblue-50 text-jpblue flex items-center justify-center mb-5 group-hover:bg-jpblue group-hover:text-white transition-colors\">\n                    <Zap className=\"h-6 w-6\" />\n                  </div>\n                  <h3 className=\"text-lg font-bold text-jpdark group-hover:text-jpblue transition-colors\">\n                    {cat.name}\n                  </h3>\n                  <p className=\"mt-2 text-sm text-jpmuted leading-relaxed\">\n                    Practical modules, simulation files, single-line diagrams and applied design exercises.\n                  </p>\n                </div>\n                <div className=\"mt-6 flex items-center gap-1.5 text-xs font-bold text-jpblue\">\n                  <span>Browse Category</span>\n                  <ArrowRight className=\"h-3.5 w-3.5 group-hover:translate-x-1 transition-transform\" />\n                </div>\n              </Link>\n            ))}\n\n            <div className=\"card-jp p-7 bg-hero-gradient text-white flex flex-col justify-between\">\n              <div>\n                <div className=\"h-12 w-12 rounded-2xl bg-white/10 text-jpcyan flex items-center justify-center mb-5\">\n                  <Users className=\"h-6 w-6\" />\n                </div>\n                <h3 className=\"text-lg font-bold text-white\">\n                  Corporate & On-Site Training\n                </h3>\n                <p className=\"mt-2 text-sm text-slate-300 leading-relaxed\">\n                  Customized engineering training for utility companies, EPC contractors, and industrial plants across West Africa.\n                </p>\n              </div>\n              <div className=\"mt-6\">\n                <Link\n                  href=\"/contact\"\n                  className=\"btn-cyan text-xs font-bold py-2.5 px-5 inline-flex items-center gap-1.5\"\n                >\n                  <span>Request Corporate Proposal</span>\n                  <ArrowRight className=\"h-3.5 w-3.5\" />\n                </Link>\n              </div>\n            </div>\n          </div>\n        </div>\n      </section>\n\n      {/* How It Works */}\n      <section id=\"how-it-works\" className=\"container-jp\">\n        <div className=\"text-center max-w-2xl mx-auto mb-16\">\n          <div className=\"eyebrow mb-2\">Step-by-Step Pathway</div>\n          <h2 className=\"text-3xl font-extrabold text-jpdark tracking-tight\">\n            How Learning Works at JP Smart Academy\n          </h2>\n          <p className=\"mt-2 text-jpmuted text-sm sm:text-base\">\n            Start advancing your engineering proficiency in three straightforward steps.\n          </p>\n        </div>\n\n        <div className=\"grid grid-cols-1 md:grid-cols-3 gap-8\">\n          <div className=\"card-jp p-8 text-center relative space-y-4\">\n            <div className=\"h-14 w-14 rounded-2xl bg-jpblue-50 text-jpblue font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm\">\n              01\n            </div>\n            <h3 className=\"text-lg font-bold text-jpdark\">Browse & Select</h3>\n            <p className=\"text-sm text-jpmuted leading-relaxed\">\n              Explore our catalogue of ETAP, power system analysis, protection, and solar PV courses. Review syllabi, prerequisites, and lesson previews.\n            </p>\n          </div>\n\n          <div className=\"card-jp p-8 text-center relative space-y-4\">\n            <div className=\"h-14 w-14 rounded-2xl bg-jpblue-50 text-jpblue font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm\">\n              02\n            </div>\n            <h3 className=\"text-lg font-bold text-jpdark\">Enrol & Secure Checkout</h3>\n            <p className=\"text-sm text-jpmuted leading-relaxed\">\n              Enrol smoothly using local Nigerian debit cards, bank transfer, or USSD via Paystack. Instant access is granted upon verification.\n            </p>\n          </div>\n\n          <div className=\"card-jp p-8 text-center relative space-y-4\">\n            <div className=\"h-14 w-14 rounded-2xl bg-jpblue-50 text-jpblue font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm\">\n              03\n            </div>\n            <h3 className=\"text-lg font-bold text-jpdark\">Learn & Apply</h3>\n            <p className=\"text-sm text-jpmuted leading-relaxed\">\n              Stream ultra-fast Cloudflare-powered video masterclasses, download calculation sheets and ETAP project files, and test your skills with quizzes.\n            </p>\n          </div>\n        </div>\n      </section>\n\n      {/* Student Testimonials Placeholder (Empty state) */}\n      <section className=\"container-jp\">\n        <div className=\"card-jp p-10 bg-jplight/60 border-dashed border-2 border-[#D1E0EE] text-center space-y-4\">\n          <Award className=\"h-10 w-10 text-jpblue mx-auto\" />\n          <h3 className=\"text-xl font-bold text-jpdark\">Student Reviews & Engineering Impact</h3>\n          <p className=\"text-sm text-jpmuted max-w-xl mx-auto leading-relaxed\">\n            We are currently gathering structured feedback from our current cohort of engineers across Nigeria. Student verified testimonials will appear here as cohorts conclude their capstone assessments.\n          </p>\n        </div>\n      </section>\n\n      {/* CTA Banner */}\n      <section className=\"container-jp\">\n        <div className=\"rounded-[28px] hero-grid text-white p-10 sm:p-14 relative overflow-hidden shadow-2xl\">\n          <div className=\"max-w-2xl space-y-6 relative z-10\">\n            <span className=\"eyebrow bg-white/10 text-jpcyan border-white/20\">\n              Transform Your Career\n            </span>\n            <h2 className=\"text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight\">\n              Ready to master power system modeling and engineering analysis?\n            </h2>\n            <p className=\"text-slate-300 text-sm sm:text-base leading-relaxed\">\n              Join dozens of electrical engineers and technical professionals mastering ETAP, relay coordination, and clean solar PV designs with JP Smart Solutions Ltd.\n            </p>\n            <div className=\"pt-2 flex flex-wrap gap-4\">\n              <Link href=\"/courses\" className=\"btn-cyan font-bold py-3 px-8 text-sm\">\n                Get Started Today\n              </Link>\n              <a\n                href={SITE_CONFIG.contact.whatsappLink}\n                target=\"_blank\"\n                rel=\"noopener noreferrer\"\n                className=\"btn-pill bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 text-sm border border-white/20 transition-colors\"\n              >\n                Speak With an Advisor\n              </a>\n            </div>\n          </div>\n        </div>\n      </section>\n    </div>\n  );\n}\n
+import React from 'react';
+import Link from 'next/link';
+import { ArrowRight, BookOpen, Award, CheckCircle2, Zap, Sparkles, Users } from 'lucide-react';
+import { createPublicClient } from '@/lib/supabase/server';
+import { CourseCard } from '@/components/CourseCard';
+import { COURSE_CATEGORIES, SITE_CONFIG } from '@/lib/constants';
+import { Course } from '@/types';
+
+export const revalidate = 60;
+
+export default async function HomePage() {
+  let courses: Course[] = [];
+  try {
+    const supabase = createPublicClient();
+    const { data: coursesData } = await supabase
+      .from('courses')
+      .select(`
+        *,
+        category:categories(id, name, slug)
+      `)
+      .order('sort_order', { ascending: true })
+      .limit(6);
+
+    courses = (coursesData as unknown as Course[]) || [];
+  } catch (err) {
+    console.error('[HomePage] Supabase fetch error:', err);
+  }
+
+  return (
+    <div className="space-y-20 pb-20">
+      {/* Hero Section */}
+      <section className="relative hero-grid text-white pt-24 pb-28 overflow-hidden">
+        <div className="container-jp relative z-10">
+          <div className="max-w-3xl space-y-6">
+            <div className="eyebrow bg-white/10 text-jpcyan border-white/20 backdrop-blur-md">
+              <Sparkles className="h-3.5 w-3.5 text-jpcyan" />
+              <span>JP SMART SOLUTIONS ACADEMY • PORT HARCOURT</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.12]">
+              Learn the engineering skills{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-jpcyan to-blue-200">
+                employers actually use.
+              </span>
+            </h1>
+
+            <p className="text-lg sm:text-xl text-slate-300 leading-relaxed max-w-2xl">
+              Specialized hands-on technical masterclasses in ETAP software, power system analysis, relay protection engineering, and solar PV designs taught by experienced practicing engineers.
+            </p>
+
+            <div className="pt-4 flex flex-wrap items-center gap-4">
+              <Link href="/courses" className="btn-cyan text-base font-bold py-3.5 px-8 flex items-center gap-2 group shadow-lg">
+                <span>Browse Courses</span>
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                href="#how-it-works"
+                className="btn-pill bg-white/10 hover:bg-white/20 text-white font-semibold py-3.5 px-7 border border-white/20 backdrop-blur-sm transition-colors"
+              >
+                How It Works
+              </Link>
+            </div>
+
+            <div className="pt-8 flex flex-wrap items-center gap-6 text-xs text-slate-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-jpcyan" />
+                <span>Industry-standard ETAP software models</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-jpcyan" />
+                <span>Nigerian grid & international IEC/IEEE standards</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-jpcyan" />
+                <span>Practical calculation workbooks included</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Bar */}
+      <section className="-mt-12 relative z-20">
+        <div className="container-jp">
+          <div className="card-jp bg-white p-8 sm:p-10 shadow-jphover border border-[#D9E6F2]">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-y sm:divide-y-0 sm:divide-x divide-[#E1EBF5]">
+              <div className="space-y-1">
+                <div className="text-3xl sm:text-4xl font-extrabold text-jpblue">10+</div>
+                <div className="text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider">
+                  Technical Courses
+                </div>
+                <p className="text-xs text-jpmuted">Covering ETAP, Solar & Protection</p>
+              </div>
+              <div className="space-y-1 pt-6 sm:pt-0">
+                <div className="text-3xl sm:text-4xl font-extrabold text-jpblue">100%</div>
+                <div className="text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider">
+                  Online & Flexible
+                </div>
+                <p className="text-xs text-jpmuted">Learn at your own pace anytime</p>
+              </div>
+              <div className="space-y-1 pt-6 sm:pt-0">
+                <div className="text-3xl sm:text-4xl font-extrabold text-jpblue">Port Harcourt</div>
+                <div className="text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider">
+                  Nigeria Based
+                </div>
+                <p className="text-xs text-jpmuted">Physical & virtual support</p>
+              </div>
+              <div className="space-y-1 pt-6 sm:pt-0">
+                <div className="text-3xl sm:text-4xl font-extrabold text-jpblue">Hands-on</div>
+                <div className="text-xs sm:text-sm font-semibold text-jpdark uppercase tracking-wider">
+                  Practical Engineering
+                </div>
+                <p className="text-xs text-jpmuted">Real single-line diagrams & studies</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Courses Section */}
+      <section className="container-jp">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10">
+          <div>
+            <div className="eyebrow mb-2">Curriculum Spotlight</div>
+            <h2 className="text-3xl font-extrabold text-jpdark tracking-tight">
+              Featured Engineering Courses
+            </h2>
+            <p className="mt-2 text-jpmuted text-sm sm:text-base max-w-xl">
+              From power system optimization to relay coordination and utility-scale solar designs.
+            </p>
+          </div>
+          <Link href="/courses" className="btn-outline self-start md:self-auto flex items-center gap-2">
+            <span>Explore All 10 Courses</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+
+        {courses.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {courses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+          </div>
+        ) : (
+          <div className="card-jp p-12 text-center space-y-3">
+            <BookOpen className="h-10 w-10 text-jpblue mx-auto" />
+            <h3 className="text-lg font-bold text-jpdark">Courses Being Prepared</h3>
+            <p className="text-sm text-jpmuted max-w-md mx-auto">
+              Our engineering curriculum is currently being updated for the upcoming session. Check back shortly.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {/* Categories Grid */}
+      <section className="bg-jplight py-20 border-y border-[#E1EBF5]">
+        <div className="container-jp">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <div className="eyebrow mb-2">Specializations</div>
+            <h2 className="text-3xl font-extrabold text-jpdark tracking-tight">
+              Explore By Domain
+            </h2>
+            <p className="mt-2 text-jpmuted text-sm sm:text-base">
+              Structured learning pathways designed specifically for electrical engineers, renewable energy developers, and technical technicians.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {COURSE_CATEGORIES.map((cat) => (
+              <Link
+                key={cat.slug}
+                href={`/courses?category=${cat.slug}`}
+                className="card-jp card-jp-hover p-7 bg-white flex flex-col justify-between group"
+              >
+                <div>
+                  <div className="h-12 w-12 rounded-2xl bg-jpblue-50 text-jpblue flex items-center justify-center mb-5 group-hover:bg-jpblue group-hover:text-white transition-colors">
+                    <Zap className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-jpdark group-hover:text-jpblue transition-colors">
+                    {cat.name}
+                  </h3>
+                  <p className="mt-2 text-sm text-jpmuted leading-relaxed">
+                    Practical modules, simulation files, single-line diagrams and applied design exercises.
+                  </p>
+                </div>
+                <div className="mt-6 flex items-center gap-1.5 text-xs font-bold text-jpblue">
+                  <span>Browse Category</span>
+                  <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </Link>
+            ))}
+
+            <div className="card-jp p-7 bg-hero-gradient text-white flex flex-col justify-between">
+              <div>
+                <div className="h-12 w-12 rounded-2xl bg-white/10 text-jpcyan flex items-center justify-center mb-5">
+                  <Users className="h-6 w-6" />
+                </div>
+                <h3 className="text-lg font-bold text-white">
+                  Corporate & On-Site Training
+                </h3>
+                <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+                  Customized engineering training for utility companies, EPC contractors, and industrial plants across West Africa.
+                </p>
+              </div>
+              <div className="mt-6">
+                <Link
+                  href="/contact"
+                  className="btn-cyan text-xs font-bold py-2.5 px-5 inline-flex items-center gap-1.5"
+                >
+                  <span>Request Corporate Proposal</span>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="container-jp">
+        <div className="text-center max-w-2xl mx-auto mb-16">
+          <div className="eyebrow mb-2">Step-by-Step Pathway</div>
+          <h2 className="text-3xl font-extrabold text-jpdark tracking-tight">
+            How Learning Works at JP Smart Academy
+          </h2>
+          <p className="mt-2 text-jpmuted text-sm sm:text-base">
+            Start advancing your engineering proficiency in three straightforward steps.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="card-jp p-8 text-center relative space-y-4">
+            <div className="h-14 w-14 rounded-2xl bg-jpblue-50 text-jpblue font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm">
+              01
+            </div>
+            <h3 className="text-lg font-bold text-jpdark">Browse & Select</h3>
+            <p className="text-sm text-jpmuted leading-relaxed">
+              Explore our catalogue of ETAP, power system analysis, protection, and solar PV courses. Review syllabi, prerequisites, and lesson previews.
+            </p>
+          </div>
+
+          <div className="card-jp p-8 text-center relative space-y-4">
+            <div className="h-14 w-14 rounded-2xl bg-jpblue-50 text-jpblue font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm">
+              02
+            </div>
+            <h3 className="text-lg font-bold text-jpdark">Enrol & Secure Checkout</h3>
+            <p className="text-sm text-jpmuted leading-relaxed">
+              Enrol smoothly using local Nigerian debit cards, bank transfer, or USSD via Paystack. Instant access is granted upon verification.
+            </p>
+          </div>
+
+          <div className="card-jp p-8 text-center relative space-y-4">
+            <div className="h-14 w-14 rounded-2xl bg-jpblue-50 text-jpblue font-extrabold text-xl flex items-center justify-center mx-auto shadow-sm">
+              03
+            </div>
+            <h3 className="text-lg font-bold text-jpdark">Learn & Apply</h3>
+            <p className="text-sm text-jpmuted leading-relaxed">
+              Stream ultra-fast Cloudflare-powered video masterclasses, download calculation sheets and ETAP project files, and test your skills with quizzes.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Student Testimonials Placeholder (Empty state) */}
+      <section className="container-jp">
+        <div className="card-jp p-10 bg-jplight/60 border-dashed border-2 border-[#D1E0EE] text-center space-y-4">
+          <Award className="h-10 w-10 text-jpblue mx-auto" />
+          <h3 className="text-xl font-bold text-jpdark">Student Reviews & Engineering Impact</h3>
+          <p className="text-sm text-jpmuted max-w-xl mx-auto leading-relaxed">
+            We are currently gathering structured feedback from our current cohort of engineers across Nigeria. Student verified testimonials will appear here as cohorts conclude their capstone assessments.
+          </p>
+        </div>
+      </section>
+
+      {/* CTA Banner */}
+      <section className="container-jp">
+        <div className="rounded-[28px] hero-grid text-white p-10 sm:p-14 relative overflow-hidden shadow-2xl">
+          <div className="max-w-2xl space-y-6 relative z-10">
+            <span className="eyebrow bg-white/10 text-jpcyan border-white/20">
+              Transform Your Career
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+              Ready to master power system modeling and engineering analysis?
+            </h2>
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
+              Join dozens of electrical engineers and technical professionals mastering ETAP, relay coordination, and clean solar PV designs with JP Smart Solutions Ltd.
+            </p>
+            <div className="pt-2 flex flex-wrap gap-4">
+              <Link href="/courses" className="btn-cyan font-bold py-3 px-8 text-sm">
+                Get Started Today
+              </Link>
+              <a
+                href={SITE_CONFIG.contact.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-pill bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 text-sm border border-white/20 transition-colors"
+              >
+                Speak With an Advisor
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
