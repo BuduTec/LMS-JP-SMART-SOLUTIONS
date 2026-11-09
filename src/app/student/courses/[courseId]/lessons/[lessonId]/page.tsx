@@ -1,7 +1,8 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { SEEDED_COURSES } from '@/lib/constants';
 import { Lesson, Course, Module, LessonResource } from '@/types';
 import {
   ChevronLeft,
@@ -24,6 +25,7 @@ interface LessonViewerPageProps {
 
 export default async function LessonViewerPage({ params }: LessonViewerPageProps) {
   const { courseId, lessonId } = await params;
+  const { isConfigured } = getSupabaseConfig();
   const supabase = await createClient();
 
   const {
@@ -32,16 +34,24 @@ export default async function LessonViewerPage({ params }: LessonViewerPageProps
 
   if (!user) redirect('/login');
 
-  // Verify active enrolment
-  const { data: enrolment } = await supabase
-    .from('enrolments')
-    .select('id')
-    .eq('student_id', user.id)
-    .eq('course_id', courseId)
-    .eq('is_active', true)
-    .single();
+  const seededCourse = SEEDED_COURSES.find((c) => c.id === courseId || c.slug === courseId);
+  const seededLessons: Lesson[] = (seededCourse?.modules || []).flatMap(
+    (m) => m.lessons || []
+  );
+  const seededLesson = seededLessons.find((l) => l.id === lessonId);
 
-  if (!enrolment) redirect('/courses');
+  if (isConfigured && !seededCourse) {
+    // Verify active enrolment
+    const { data: enrolment } = await supabase
+      .from('enrolments')
+      .select('id')
+      .eq('student_id', user.id)
+      .eq('course_id', courseId)
+      .eq('is_active', true)
+      .single();
+
+    if (!enrolment) redirect('/courses');
+  }
 
   // Fetch current lesson
   const { data: lessonData } = await supabase
@@ -52,11 +62,12 @@ export default async function LessonViewerPage({ params }: LessonViewerPageProps
     `)
     .eq('id', lessonId)
     .eq('course_id', courseId)
-    .single();
+    .maybeSingle();
 
-  if (!lessonData) notFound();
+  const resolvedLesson = lessonData || seededLesson;
+  if (!resolvedLesson) notFound();
 
-  const lesson = lessonData as unknown as Lesson;
+  const lesson = resolvedLesson as unknown as Lesson;
 
   // Fetch all lessons in course to find prev and next
   const { data: allLessonsData } = await supabase
@@ -66,7 +77,8 @@ export default async function LessonViewerPage({ params }: LessonViewerPageProps
     .eq('is_published', true)
     .order('sort_order', { ascending: true });
 
-  const allLessons = allLessonsData || [];
+  const allLessons =
+    allLessonsData && allLessonsData.length > 0 ? allLessonsData : seededLessons;
   const currentIndex = allLessons.findIndex((l) => l.id === lessonId);
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1] : null;
   const nextLesson =

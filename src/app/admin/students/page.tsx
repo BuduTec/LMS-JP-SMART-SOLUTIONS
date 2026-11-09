@@ -1,21 +1,29 @@
 import React from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStoreStudents } from '@/lib/admin-store';
 import { formatDate } from '@/lib/utils';
 import { deactivateStudent } from '@/actions/admin';
-import { Users, UserX, UserCheck, Shield } from 'lucide-react';
 
 export default async function AdminStudentsPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let students: any[] = getStoreStudents();
 
-  const { data: students } = await supabase
-    .from('profiles')
-    .select(`
-      *,
-      enrolments(count)
-    `)
-    .eq('role', 'student')
-    .order('created_at', { ascending: false });
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: dbStudents } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        enrolments(count)
+      `)
+      .eq('role', 'student')
+      .order('created_at', { ascending: false });
+
+    if (dbStudents && dbStudents.length > 0) {
+      students = dbStudents;
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -41,7 +49,8 @@ export default async function AdminStudentsPage() {
           <tbody className="divide-y divide-slate-100">
             {(students || []).map((student: any) => {
               const toggleActive = deactivateStudent.bind(null, student.id, !student.is_active);
-              const enrolmentCount = student.enrolments?.[0]?.count ?? 0;
+              const enrolmentCount =
+                student.enrolments?.[0]?.count ?? student.enrolment_count ?? 0;
 
               return (
                 <tr key={student.id} className="hover:bg-slate-50/70 transition-colors">

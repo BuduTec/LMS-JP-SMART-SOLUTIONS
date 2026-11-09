@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStoreCategories } from '@/lib/admin-store';
 import { createCourse } from '@/actions/admin';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,11 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, Save } from 'lucide-react';
-import { COURSE_CATEGORIES } from '@/lib/constants';
 
 export default async function NewCoursePage() {
-  const supabase = await createClient();
-  const { data: categories } = await supabase.from('categories').select('*').order('sort_order');
+  const { isConfigured } = getSupabaseConfig();
+  let categories = getStoreCategories();
+
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: dbCategories } = await supabase.from('categories').select('*').order('sort_order');
+    if (dbCategories && dbCategories.length > 0) {
+      categories = dbCategories;
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">

@@ -1,24 +1,30 @@
 import React from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStoreCourses } from '@/lib/admin-store';
 import { Course } from '@/types';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, Edit, BookOpen, Eye, ArrowUpRight } from 'lucide-react';
-import { publishCourse, deleteCourse } from '@/actions/admin';
-import { Badge } from '@/components/ui/badge';
+import { Plus, Edit } from 'lucide-react';
+import { publishCourse } from '@/actions/admin';
 
 export default async function AdminCoursesPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let courses: Course[] = getStoreCourses();
 
-  const { data: coursesData } = await supabase
-    .from('courses')
-    .select(`
-      *,
-      category:categories(name)
-    `)
-    .order('sort_order', { ascending: true });
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: coursesData } = await supabase
+      .from('courses')
+      .select(`
+        *,
+        category:categories(name)
+      `)
+      .order('sort_order', { ascending: true });
 
-  const courses: Course[] = (coursesData as unknown as Course[]) || [];
+    if (coursesData && coursesData.length > 0) {
+      courses = coursesData as unknown as Course[];
+    }
+  }
 
   return (
     <div className="space-y-6">

@@ -86,7 +86,14 @@ export function StudentSidebar({ certificatesEnabled = false }: StudentSidebarPr
       </nav>
 
       {/* Footer / Sign Out */}
-      <div className="p-4 border-t border-[#E1EBF5]">
+      <div className="p-4 border-t border-[#E1EBF5] space-y-1">
+        <Link
+          href="/admin/dashboard"
+          className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-jpblue bg-jpblue-50 hover:bg-jpblue hover:text-white transition-colors"
+        >
+          <Settings className="h-4 w-4" />
+          <span>Switch to Admin Console</span>
+        </Link>
         <button
           onClick={handleSignOut}
           className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors"

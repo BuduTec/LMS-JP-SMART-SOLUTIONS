@@ -36,10 +36,6 @@ const nextConfig: NextConfig = {
         source: '/(.*)',
         headers: [
           {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
@@ -50,24 +46,6 @@ const nextConfig: NextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co https://embed.cloudflarestream.com",
-              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-              "font-src 'self' https://fonts.gstatic.com",
-              "img-src 'self' data: https: blob:",
-              "media-src 'self' https://*.cloudflarestream.com https://videodelivery.net",
-              "frame-src 'self' https://*.cloudflarestream.com https://embed.cloudflarestream.com https://js.paystack.co",
-              "connect-src 'self' https://*.supabase.co https://api.paystack.co https://*.cloudflarestream.com https://videodelivery.net wss://*.supabase.co",
-              "worker-src 'self' blob:",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              "upgrade-insecure-requests",
-            ].join('; '),
           },
         ],
       },

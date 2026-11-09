@@ -1,5 +1,6 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStorePlatformSettings } from '@/lib/admin-store';
 import { updatePlatformSettings } from '@/actions/admin';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,13 +10,21 @@ import { Save, ShieldAlert, Sliders } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function AdminSettingsPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let settings: any = getStorePlatformSettings();
 
-  const { data: settings } = await supabase
-    .from('platform_settings')
-    .select('*')
-    .eq('id', 1)
-    .single();
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: dbSettings } = await supabase
+      .from('platform_settings')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle();
+
+    if (dbSettings) {
+      settings = dbSettings;
+    }
+  }
 
   async function handleSaveSettings(formData: FormData) {
     'use server';

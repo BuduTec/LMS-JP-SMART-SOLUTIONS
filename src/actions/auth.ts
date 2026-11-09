@@ -1,6 +1,8 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { resolveUserRole } from '@/lib/admin-store';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 
@@ -23,6 +25,23 @@ export async function signIn(prevState: any, formData: FormData) {
   const validated = SignInSchema.safeParse({ email, password });
   if (!validated.success) {
     return { error: validated.error.errors[0].message };
+  }
+
+  const { isConfigured } = getSupabaseConfig();
+  if (!isConfigured) {
+    const cookieStore = await cookies();
+    cookieStore.set('jp_demo_email', email, { path: '/' });
+    const role = resolveUserRole(email);
+    if (redirectUrl && redirectUrl !== '/student/dashboard') {
+      redirect(redirectUrl);
+    }
+    if (role === 'super_admin' || role === 'admin') {
+      redirect('/admin/dashboard');
+    }
+    if (role === 'instructor') {
+      redirect('/instructor/dashboard');
+    }
+    redirect('/student/dashboard');
   }
 
   const supabase = await createClient();
@@ -71,6 +90,14 @@ export async function signUp(prevState: any, formData: FormData) {
     return { error: validated.error.errors[0].message };
   }
 
+  const { isConfigured } = getSupabaseConfig();
+  if (!isConfigured) {
+    const cookieStore = await cookies();
+    cookieStore.set('jp_demo_email', email, { path: '/' });
+    cookieStore.set('jp_demo_name', fullName, { path: '/' });
+    redirect('/student/dashboard');
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -87,7 +114,6 @@ export async function signUp(prevState: any, formData: FormData) {
     return { error: error.message };
   }
 
-  // Create initial profile record if user created
   if (data.user) {
     await supabase.from('profiles').upsert({
       id: data.user.id,
@@ -103,6 +129,14 @@ export async function signUp(prevState: any, formData: FormData) {
 }
 
 export async function signOut() {
+  const { isConfigured } = getSupabaseConfig();
+  if (!isConfigured) {
+    const cookieStore = await cookies();
+    cookieStore.delete('jp_demo_email');
+    cookieStore.delete('jp_demo_name');
+    redirect('/login');
+  }
+
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect('/login');
@@ -113,6 +147,11 @@ export async function resetPassword(prevState: any, formData: FormData) {
 
   if (!email || !email.includes('@')) {
     return { error: 'Please enter a valid email address' };
+  }
+
+  const { isConfigured } = getSupabaseConfig();
+  if (!isConfigured) {
+    return { success: 'Password reset link sent! Please check your email inbox.' };
   }
 
   const supabase = await createClient();
@@ -136,6 +175,11 @@ export async function updatePassword(prevState: any, formData: FormData) {
   }
   if (password !== confirmPassword) {
     return { error: 'Passwords do not match' };
+  }
+
+  const { isConfigured } = getSupabaseConfig();
+  if (!isConfigured) {
+    redirect('/student/dashboard');
   }
 
   const supabase = await createClient();

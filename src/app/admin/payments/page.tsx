@@ -1,19 +1,27 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStorePayments } from '@/lib/admin-store';
 import { formatCurrency, formatDate } from '@/lib/utils';
-import { CreditCard, ExternalLink } from 'lucide-react';
 
 export default async function AdminPaymentsPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let payments: any[] = getStorePayments();
 
-  const { data: payments } = await supabase
-    .from('payments')
-    .select(`
-      *,
-      student:profiles(full_name, email),
-      course:courses(title)
-    `)
-    .order('created_at', { ascending: false });
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: dbPayments } = await supabase
+      .from('payments')
+      .select(`
+        *,
+        student:profiles(full_name, email),
+        course:courses(title)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (dbPayments && dbPayments.length > 0) {
+      payments = dbPayments;
+    }
+  }
 
   return (
     <div className="space-y-6">

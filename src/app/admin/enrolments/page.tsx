@@ -1,35 +1,45 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStoreEnrolments, getStoreStudents, getStoreCourses } from '@/lib/admin-store';
 import { formatDate } from '@/lib/utils';
 import { createManualEnrolment } from '@/actions/admin';
-import { UserCheck, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export default async function AdminEnrolmentsPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let enrolments: any[] = getStoreEnrolments();
+  let students: any[] = getStoreStudents();
+  let courses: any[] = getStoreCourses();
 
-  // Fetch enrolments
-  const { data: enrolments } = await supabase
-    .from('enrolments')
-    .select(`
-      *,
-      student:profiles(id, full_name, email),
-      course:courses(id, title)
-    `)
-    .order('enrolled_at', { ascending: false });
+  if (isConfigured) {
+    const supabase = await createClient();
 
-  // Fetch students and courses for manual enrolment
-  const { data: students } = await supabase
-    .from('profiles')
-    .select('id, full_name, email')
-    .eq('role', 'student');
+    const { data: dbEnrolments } = await supabase
+      .from('enrolments')
+      .select(`
+        *,
+        student:profiles(id, full_name, email),
+        course:courses(id, title)
+      `)
+      .order('enrolled_at', { ascending: false });
 
-  const { data: courses } = await supabase
-    .from('courses')
-    .select('id, title');
+    const { data: dbStudents } = await supabase
+      .from('profiles')
+      .select('id, full_name, email')
+      .eq('role', 'student');
+
+    const { data: dbCourses } = await supabase
+      .from('courses')
+      .select('id, title');
+
+    if (dbEnrolments && dbEnrolments.length > 0) enrolments = dbEnrolments;
+    if (dbStudents && dbStudents.length > 0) students = dbStudents;
+    if (dbCourses && dbCourses.length > 0) courses = dbCourses;
+  }
 
   async function handleManualSubmit(formData: FormData) {
     'use server';

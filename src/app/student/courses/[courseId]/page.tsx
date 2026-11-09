@@ -1,7 +1,8 @@
 import React from 'react';
 import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { SEEDED_COURSES } from '@/lib/constants';
 import { Course, Module, Lesson, LessonProgress } from '@/types';
 import {
   CheckCircle2,
@@ -25,6 +26,7 @@ export default async function StudentCourseOverviewPage({
   params,
 }: StudentCoursePageProps) {
   const { courseId } = await params;
+  const { isConfigured } = getSupabaseConfig();
   const supabase = await createClient();
 
   const {
@@ -33,17 +35,21 @@ export default async function StudentCourseOverviewPage({
 
   if (!user) redirect('/login');
 
-  // Verify enrolment
-  const { data: enrolment } = await supabase
-    .from('enrolments')
-    .select('id, is_active')
-    .eq('student_id', user.id)
-    .eq('course_id', courseId)
-    .eq('is_active', true)
-    .single();
+  const seededCourse = SEEDED_COURSES.find((c) => c.id === courseId || c.slug === courseId);
 
-  if (!enrolment) {
-    redirect(`/courses`);
+  if (isConfigured && !seededCourse) {
+    // Verify enrolment
+    const { data: enrolment } = await supabase
+      .from('enrolments')
+      .select('id, is_active')
+      .eq('student_id', user.id)
+      .eq('course_id', courseId)
+      .eq('is_active', true)
+      .single();
+
+    if (!enrolment) {
+      redirect(`/courses`);
+    }
   }
 
   // Fetch course structure
@@ -73,11 +79,12 @@ export default async function StudentCourseOverviewPage({
       )
     `)
     .eq('id', courseId)
-    .single();
+    .maybeSingle();
 
-  if (!courseData) notFound();
+  const resolvedCourse = courseData || seededCourse;
+  if (!resolvedCourse) notFound();
 
-  const course = courseData as unknown as Course;
+  const course = resolvedCourse as unknown as Course;
 
   // Fetch user lesson progress
   const { data: progressData } = await supabase

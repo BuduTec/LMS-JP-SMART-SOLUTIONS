@@ -15,6 +15,7 @@ import { createPublicClient } from '@/lib/supabase/server';
 import { formatCurrency, formatDuration } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { SITE_CONFIG } from '@/lib/constants';
+import { getStoreCourses } from '@/lib/admin-store';
 import { Course, Module, Lesson } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -31,11 +32,13 @@ export async function generateMetadata({
   const { slug } = await params;
   const supabase = createPublicClient();
 
-  const { data: course } = await supabase
+  const { data: dbCourse } = await supabase
     .from('courses')
     .select('title, short_description, meta_title, meta_description, image_url')
     .eq('slug', slug)
     .maybeSingle();
+
+  const course = dbCourse || getStoreCourses().find((c) => c.slug === slug);
 
   if (!course) {
     return {
@@ -82,11 +85,13 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
     .eq('slug', slug)
     .maybeSingle();
 
-  if (!courseData) {
+  const fallbackCourse = getStoreCourses().find((c) => c.slug === slug);
+
+  if (!courseData && !fallbackCourse) {
     notFound();
   }
 
-  const course = courseData as unknown as Course;
+  const course = (courseData || fallbackCourse) as unknown as Course;
 
   const sortedModules = ((course.modules || []) as Module[]).sort(
     (a, b) => a.sort_order - b.sort_order
@@ -182,6 +187,7 @@ export default async function CourseDetailPage({ params }: CourseDetailPageProps
                 alt={course.title}
                 fill
                 priority
+                referrerPolicy="no-referrer"
                 className="object-cover"
               />
             </div>

@@ -9,12 +9,12 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 function VerifyPaymentContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const reference = searchParams.get('ref');
+  const fallbackCourseId = searchParams.get('courseId') || undefined;
 
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
-  const [courseId, setCourseId] = useState<string | null>(null);
+  const [courseId, setCourseId] = useState<string | null>(fallbackCourseId || null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ function VerifyPaymentContent() {
       }
 
       try {
-        const result = await verifyPayment(reference);
+        const result = await verifyPayment(reference, fallbackCourseId);
         if (result.success && result.courseId) {
           setSuccess(true);
           setCourseId(result.courseId);
@@ -41,7 +41,7 @@ function VerifyPaymentContent() {
     }
 
     handleVerify();
-  }, [reference]);
+  }, [reference, fallbackCourseId]);
 
   return (
     <Card className="border border-[#D5E1ED] shadow-jphover text-center">

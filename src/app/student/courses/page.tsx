@@ -1,12 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { SEEDED_COURSES } from '@/lib/constants';
 import { Enrolment } from '@/types';
 import { BookOpen, PlayCircle, ArrowRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 export default async function StudentCoursesPage() {
+  const { isConfigured } = getSupabaseConfig();
   const supabase = await createClient();
   const {
     data: { user },
@@ -33,7 +35,21 @@ export default async function StudentCoursesPage() {
     .eq('is_active', true)
     .order('enrolled_at', { ascending: false });
 
-  const enrolments: Enrolment[] = (enrolmentsData as unknown as Enrolment[]) || [];
+  let enrolments: Enrolment[] = (enrolmentsData as unknown as Enrolment[]) || [];
+  if (!isConfigured && enrolments.length === 0) {
+    enrolments = SEEDED_COURSES.slice(0, 3).map((course, idx) => ({
+      id: `demo-enrol-${idx + 1}`,
+      student_id: user.id,
+      course_id: course.id,
+      payment_id: null,
+      enrolled_at: '2026-11-02T00:00:00Z',
+      expires_at: null,
+      is_active: true,
+      enrolled_by: null,
+      notes: 'Active Enrolment',
+      course,
+    }));
+  }
 
   const defaultImage =
     'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80';
@@ -64,6 +80,7 @@ export default async function StudentCoursesPage() {
                       src={course.image_url || defaultImage}
                       alt={course.title}
                       fill
+                      referrerPolicy="no-referrer"
                       className="object-cover"
                     />
                     <div className="absolute top-2.5 left-2.5">

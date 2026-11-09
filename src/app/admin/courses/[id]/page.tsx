@@ -1,15 +1,16 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
-import { Course, Module, Lesson } from '@/types';
-import { updateCourse, publishCourse } from '@/actions/admin';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStoreCourseById, getStoreCategories } from '@/lib/admin-store';
+import { Course, Module } from '@/types';
+import { updateCourse } from '@/actions/admin';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save, Plus, FileText, Video, BookOpen } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Video } from 'lucide-react';
 
 interface EditCoursePageProps {
   params: Promise<{
@@ -19,33 +20,45 @@ interface EditCoursePageProps {
 
 export default async function AdminEditCoursePage({ params }: EditCoursePageProps) {
   const { id } = await params;
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let courseData: any = getStoreCourseById(id);
+  let categories = getStoreCategories();
 
-  // Fetch course with modules and lessons
-  const { data: courseData } = await supabase
-    .from('courses')
-    .select(`
-      *,
-      modules(
-        id,
-        title,
-        sort_order,
-        lessons(
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: dbCourse } = await supabase
+      .from('courses')
+      .select(`
+        *,
+        modules(
           id,
           title,
-          type,
-          video_cf_uid,
-          sort_order
+          sort_order,
+          lessons(
+            id,
+            title,
+            type,
+            video_cf_uid,
+            sort_order
+          )
         )
-      )
-    `)
-    .eq('id', id)
-    .single();
+      `)
+      .eq('id', id)
+      .maybeSingle();
+
+    if (dbCourse) {
+      courseData = dbCourse;
+    }
+
+    const { data: dbCategories } = await supabase.from('categories').select('*').order('sort_order');
+    if (dbCategories && dbCategories.length > 0) {
+      categories = dbCategories;
+    }
+  }
 
   if (!courseData) notFound();
 
   const course = courseData as unknown as Course;
-  const { data: categories } = await supabase.from('categories').select('*').order('sort_order');
 
   const boundUpdate = updateCourse.bind(null, course.id);
   const modules = ((course.modules || []) as Module[]).sort((a, b) => a.sort_order - b.sort_order);

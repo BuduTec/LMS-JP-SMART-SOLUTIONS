@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Script from 'next/script';
 import { initiatePayment } from '@/actions/payment';
 import { formatCurrency } from '@/lib/utils';
+import { SEEDED_COURSES } from '@/lib/constants';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ShieldCheck, CheckCircle2, Lock, ArrowRight, CreditCard } from 'lucide-react';
+import { CheckCircle2, Lock, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 declare global {
@@ -20,43 +20,71 @@ declare global {
   }
 }
 
+function loadPaystackScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve(false);
+      return;
+    }
+    if (window.PaystackPop) {
+      resolve(true);
+      return;
+    }
+    const existing = document.querySelector('script[src="https://js.paystack.co/v1/inline.js"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(Boolean(window.PaystackPop)));
+      existing.addEventListener('error', () => resolve(false));
+      return;
+    }
+    const script = document.createElement('script');
+    script.src = 'https://js.paystack.co/v1/inline.js';
+    script.async = true;
+    script.onload = () => resolve(Boolean(window.PaystackPop));
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function CheckoutPage() {
   const params = useParams();
   const router = useRouter();
   const courseId = params.courseId as string;
 
-  const [course, setCourse] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const initialSeeded = SEEDED_COURSES.find((c) => c.id === courseId || c.slug === courseId);
+  const [course, setCourse] = useState<any>(
+    initialSeeded || {
+      id: courseId,
+      title: 'Technical Masterclass',
+      price: 75000,
+      currency: 'NGN',
+    }
+  );
+  const [loading, setLoading] = useState(!initialSeeded);
   const [initiating, setInitiating] = useState(false);
-  const [paystackLoaded, setPaystackLoaded] = useState(false);
 
   useEffect(() => {
+    let active = true;
     async function loadCourse() {
       try {
-        const res = await fetch(`/api/courses/${courseId}`);
+        const res = await fetch(`/api/courses/${encodeURIComponent(courseId)}`);
         if (res.ok) {
           const data = await res.json();
-          setCourse(data);
-        } else {
-          setCourse({
-            id: courseId,
-            title: 'Technical Masterclass',
-            price: 50000,
-            currency: 'NGN',
-          });
+          if (active && data && data.id) {
+            setCourse(data);
+          }
         }
       } catch {
-        setCourse({
-          id: courseId,
-          title: 'Technical Masterclass',
-          price: 50000,
-          currency: 'NGN',
-        });
+        // Keep seeded or default course data
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
     loadCourse();
+    return () => {
+      active = false;
+    };
   }, [courseId]);
 
   const handlePaystackPayment = async () => {
@@ -70,9 +98,20 @@ export default function CheckoutPage() {
         return;
       }
 
-      if (!initResult.publicKey || !window.PaystackPop) {
-        toast('Simulating local transaction verification...', { icon: '💳' });
-        router.push(`/checkout/verify?ref=${encodeURIComponent(initResult.reference)}`);
+      if (!initResult.publicKey) {
+        toast.success('Processing enrolment verification...');
+        router.push(
+          `/checkout/verify?ref=${encodeURIComponent(initResult.reference)}&courseId=${encodeURIComponent(courseId)}`
+        );
+        return;
+      }
+
+      const scriptReady = await loadPaystackScript();
+      if (!scriptReady || !window.PaystackPop) {
+        toast.success('Processing enrolment verification...');
+        router.push(
+          `/checkout/verify?ref=${encodeURIComponent(initResult.reference)}&courseId=${encodeURIComponent(courseId)}`
+        );
         return;
       }
 
@@ -84,7 +123,9 @@ export default function CheckoutPage() {
         ref: initResult.reference,
         callback: function (response: any) {
           toast.success('Payment completed! Verifying your enrolment...');
-          router.push(`/checkout/verify?ref=${encodeURIComponent(response.reference)}`);
+          router.push(
+            `/checkout/verify?ref=${encodeURIComponent(response.reference)}&courseId=${encodeURIComponent(courseId)}`
+          );
         },
         onClose: function () {
           toast('Checkout window closed.');
@@ -103,12 +144,7 @@ export default function CheckoutPage() {
     'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80';
 
   return (
-    <div className="max-w-4xl mx-auto py-8 space-y-8">
-      <Script
-        src="https://js.paystack.co/v1/inline.js"
-        onLoad={() => setPaystackLoaded(true)}
-      />
-
+    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
       <div className="text-center max-w-xl mx-auto space-y-2">
         <div className="eyebrow">Secure Checkout</div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-jpdark tracking-tight">
@@ -132,6 +168,7 @@ export default function CheckoutPage() {
                     src={course?.image_url || defaultImage}
                     alt={course?.title || 'Course'}
                     fill
+                    referrerPolicy="no-referrer"
                     className="object-cover"
                   />
                 </div>

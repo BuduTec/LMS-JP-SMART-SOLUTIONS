@@ -1,18 +1,27 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStorePlatformSettings } from '@/lib/admin-store';
 import { updatePlatformSettings } from '@/actions/admin';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sliders, Award, HelpCircle, FileCheck, MessageSquare, Video, Star, Tag, Bell } from 'lucide-react';
+import { Award, HelpCircle, FileCheck, MessageSquare, Video, Tag } from 'lucide-react';
 
 export default async function AdminFeatureFlagsPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let settings: any = getStorePlatformSettings();
 
-  const { data: settings } = await supabase
-    .from('platform_settings')
-    .select('*')
-    .eq('id', 1)
-    .single();
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: dbSettings } = await supabase
+      .from('platform_settings')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle();
+
+    if (dbSettings) {
+      settings = dbSettings;
+    }
+  }
 
   const features = [
     {

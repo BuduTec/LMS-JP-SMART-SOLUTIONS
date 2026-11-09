@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen, Award, CheckCircle2, Zap, Sparkles, Users } from 
 import { createPublicClient } from '@/lib/supabase/server';
 import { CourseCard } from '@/components/CourseCard';
 import { COURSE_CATEGORIES, SITE_CONFIG } from '@/lib/constants';
+import { getStoreCourses } from '@/lib/admin-store';
 import { Course } from '@/types';
 
 export const revalidate = 60;
@@ -24,6 +25,10 @@ export default async function HomePage() {
     courses = (coursesData as unknown as Course[]) || [];
   } catch (err) {
     console.error('[HomePage] Supabase fetch error:', err);
+  }
+
+  if (courses.length === 0) {
+    courses = getStoreCourses().filter((c) => c.status === 'published').slice(0, 6);
   }
 
   return (

@@ -1,19 +1,26 @@
 import React from 'react';
-import { createClient } from '@/lib/supabase/server';
-import { formatDate } from '@/lib/utils';
-import { History, Shield } from 'lucide-react';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getStoreAuditLogs } from '@/lib/admin-store';
 
 export default async function AdminAuditLogsPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  let logs: any[] = getStoreAuditLogs();
 
-  const { data: logs } = await supabase
-    .from('audit_logs')
-    .select(`
-      *,
-      user:profiles(full_name, email)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(100);
+  if (isConfigured) {
+    const supabase = await createClient();
+    const { data: dbLogs } = await supabase
+      .from('audit_logs')
+      .select(`
+        *,
+        user:profiles(full_name, email)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(100);
+
+    if (dbLogs && dbLogs.length > 0) {
+      logs = dbLogs;
+    }
+  }
 
   return (
     <div className="space-y-6">

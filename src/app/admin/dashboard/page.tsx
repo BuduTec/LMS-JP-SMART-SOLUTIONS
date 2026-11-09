@@ -1,82 +1,95 @@
 import React from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { getAdminDashboardMetrics } from '@/lib/admin-store';
 import {
   Users,
   BookOpen,
   CreditCard,
   UserCheck,
-  TrendingUp,
-  ArrowRight,
-  ShieldCheck,
-  AlertCircle,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/utils';
 
 export default async function AdminDashboardOverviewPage() {
-  const supabase = await createClient();
+  const { isConfigured } = getSupabaseConfig();
+  const fallback = getAdminDashboardMetrics();
 
-  // 1. Total students count
-  const { count: totalStudents } = await supabase
-    .from('profiles')
-    .select('id', { count: 'exact', head: true })
-    .eq('role', 'student');
+  let totalStudents = fallback.totalStudents;
+  let activeStudents = fallback.activeStudents;
+  let totalCourses = fallback.totalCourses;
+  let publishedCourses = fallback.publishedCourses;
+  let totalEnrolments = fallback.totalEnrolments;
+  let totalRevenue = fallback.totalRevenue;
+  let recentPayments: any[] = fallback.recentPayments;
+  let recentStudents: any[] = fallback.recentStudents;
 
-  // 2. Active students count
-  const { count: activeStudents } = await supabase
-    .from('profiles')
-    .select('id', { count: 'exact', head: true })
-    .eq('role', 'student')
-    .eq('is_active', true);
+  if (isConfigured) {
+    const supabase = await createClient();
 
-  // 3. Courses count
-  const { count: totalCourses } = await supabase
-    .from('courses')
-    .select('id', { count: 'exact', head: true });
+    const { count: dbTotalStudents } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'student');
 
-  const { count: publishedCourses } = await supabase
-    .from('courses')
-    .select('id', { count: 'exact', head: true })
-    .eq('status', 'published');
+    const { count: dbActiveStudents } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('role', 'student')
+      .eq('is_active', true);
 
-  // 4. Enrolments count
-  const { count: totalEnrolments } = await supabase
-    .from('enrolments')
-    .select('id', { count: 'exact', head: true })
-    .eq('is_active', true);
+    const { count: dbTotalCourses } = await supabase
+      .from('courses')
+      .select('id', { count: 'exact', head: true });
 
-  // 5. Total revenue (sum of verified successful payments)
-  const { data: payments } = await supabase
-    .from('payments')
-    .select('amount, status')
-    .eq('status', 'successful');
+    const { count: dbPublishedCourses } = await supabase
+      .from('courses')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'published');
 
-  const totalRevenue = (payments || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+    const { count: dbTotalEnrolments } = await supabase
+      .from('enrolments')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true);
 
-  // 6. Recent payments
-  const { data: recentPayments } = await supabase
-    .from('payments')
-    .select(`
-      id,
-      payment_reference,
-      amount,
-      currency,
-      status,
-      created_at,
-      student:profiles(full_name, email),
-      course:courses(title)
-    `)
-    .order('created_at', { ascending: false })
-    .limit(5);
+    const { data: payments } = await supabase
+      .from('payments')
+      .select('amount, status')
+      .eq('status', 'successful');
 
-  // 7. Recent registrations
-  const { data: recentStudents } = await supabase
-    .from('profiles')
-    .select('id, full_name, email, created_at, is_active')
-    .eq('role', 'student')
-    .order('created_at', { ascending: false })
-    .limit(5);
+    const { data: dbRecentPayments } = await supabase
+      .from('payments')
+      .select(`
+        id,
+        payment_reference,
+        amount,
+        currency,
+        status,
+        created_at,
+        student:profiles(full_name, email),
+        course:courses(title)
+      `)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const { data: dbRecentStudents } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, created_at, is_active')
+      .eq('role', 'student')
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if ((dbTotalCourses ?? 0) > 0) {
+      totalStudents = dbTotalStudents || 0;
+      activeStudents = dbActiveStudents || 0;
+      totalCourses = dbTotalCourses || 0;
+      publishedCourses = dbPublishedCourses || 0;
+      totalEnrolments = dbTotalEnrolments || 0;
+      totalRevenue = (payments || []).reduce((sum, p) => sum + Number(p.amount || 0), 0);
+      recentPayments = dbRecentPayments || [];
+      recentStudents = dbRecentStudents || [];
+    }
+  }
 
   return (
     <div className="space-y-8">

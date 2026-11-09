@@ -1,12 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSupabaseConfig } from '@/lib/supabase/server';
+import { SEEDED_COURSES } from '@/lib/constants';
 import { BookOpen, CheckCircle2, Award, Clock, ArrowRight, PlayCircle } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Enrolment, LessonProgress } from '@/types';
 
 export default async function StudentDashboardPage() {
+  const { isConfigured } = getSupabaseConfig();
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,7 +40,21 @@ export default async function StudentDashboardPage() {
     .eq('student_id', user.id)
     .eq('is_active', true);
 
-  const enrolments: Enrolment[] = (enrolmentsData as unknown as Enrolment[]) || [];
+  let enrolments: Enrolment[] = (enrolmentsData as unknown as Enrolment[]) || [];
+  if (!isConfigured && enrolments.length === 0) {
+    enrolments = SEEDED_COURSES.slice(0, 2).map((course, idx) => ({
+      id: `demo-enrol-${idx + 1}`,
+      student_id: user.id,
+      course_id: course.id,
+      payment_id: null,
+      enrolled_at: '2026-11-02T00:00:00Z',
+      expires_at: null,
+      is_active: true,
+      enrolled_by: null,
+      notes: 'Active Enrolment',
+      course,
+    }));
+  }
 
   // Completed lessons count
   const { count: completedLessonsCount } = await supabase

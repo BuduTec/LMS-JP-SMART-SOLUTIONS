@@ -78,10 +78,16 @@ export function PublicHeader() {
         </nav>
 
         {/* Desktop CTA */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-3">
+          <Link
+            href="/admin/dashboard"
+            className="text-xs font-bold text-jpblue bg-jpblue-50 hover:bg-jpblue hover:text-white px-3.5 py-2 rounded-full border border-jpblue-100 transition-colors"
+          >
+            Admin Console
+          </Link>
           <Link
             href="/login"
-            className="text-sm font-semibold text-jpdark hover:text-jpblue px-4 py-2 transition-colors"
+            className="text-sm font-semibold text-jpdark hover:text-jpblue px-3 py-2 transition-colors"
           >
             Log In
           </Link>
@@ -120,6 +126,13 @@ export function PublicHeader() {
             </Link>
           ))}
           <div className="pt-4 border-t border-[#E1EBF5] flex flex-col gap-2.5">
+            <Link
+              href="/admin/dashboard"
+              onClick={() => setMobileMenuOpen(false)}
+              className="btn-outline w-full text-center border-jpblue text-jpblue font-bold"
+            >
+              Admin Console
+            </Link>
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}

@@ -102,6 +102,32 @@ function LoginForm() {
             <ArrowRight className="h-4 w-4" />
           </Button>
         </form>
+
+        <div className="mt-6 pt-5 border-t border-[#EAF0F6] space-y-3">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-jpmuted text-center">
+            Direct Role Portal Access
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <Link
+              href="/admin/dashboard"
+              className="py-2.5 px-2 rounded-xl bg-jpdark text-white hover:bg-slate-800 text-xs font-bold text-center transition-colors"
+            >
+              Admin Console
+            </Link>
+            <Link
+              href="/instructor/dashboard"
+              className="py-2.5 px-2 rounded-xl bg-jpblue-50 text-jpblue hover:bg-jpblue hover:text-white text-xs font-bold text-center border border-jpblue-100 transition-colors"
+            >
+              Instructor Hub
+            </Link>
+            <Link
+              href="/student/dashboard"
+              className="py-2.5 px-2 rounded-xl bg-jplight text-jpdark hover:bg-slate-200 text-xs font-bold text-center border border-[#D5E1ED] transition-colors"
+            >
+              Student Portal
+            </Link>
+          </div>
+        </div>
       </CardContent>
       <CardFooter className="pt-0 text-center justify-center border-t border-[#EAF0F6] pt-4">
         <p className="text-xs text-jpmuted">

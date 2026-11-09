@@ -2,6 +2,7 @@ import React from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { CourseCard } from '@/components/CourseCard';
 import { COURSE_CATEGORIES } from '@/lib/constants';
+import { getStoreCourses } from '@/lib/admin-store';
 import { Course } from '@/types';
 import Link from 'next/link';
 import { Search, BookOpen } from 'lucide-react';
@@ -17,34 +18,52 @@ export const dynamic = 'force-dynamic';
 
 export default async function CoursesPage({ searchParams }: CoursesPageProps) {
   const { category, q } = await searchParams;
-  const supabase = await createClient();
+  let courses: Course[] = [];
 
-  let query = supabase
-    .from('courses')
-    .select(`
-      *,
-      category:categories(id, name, slug)
-    `)
-    .order('sort_order', { ascending: true });
+  try {
+    const supabase = await createClient();
 
-  if (category) {
-    const { data: catRecord } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', category)
-      .single();
+    let query = supabase
+      .from('courses')
+      .select(`
+        *,
+        category:categories(id, name, slug)
+      `)
+      .order('sort_order', { ascending: true });
 
-    if (catRecord) {
-      query = query.eq('category_id', catRecord.id);
+    if (category) {
+      const { data: catRecord } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', category)
+        .single();
+
+      if (catRecord) {
+        query = query.eq('category_id', catRecord.id);
+      }
     }
+
+    if (q && q.trim() !== '') {
+      query = query.ilike('title', `%${q.trim()}%`);
+    }
+
+    const { data: coursesData } = await query;
+    courses = (coursesData as unknown as Course[]) || [];
+  } catch {
+    courses = [];
   }
 
-  if (q && q.trim() !== '') {
-    query = query.ilike('title', `%${q.trim()}%`);
+  if (courses.length === 0) {
+    courses = getStoreCourses().filter((c) => {
+      const matchesCat = !category || c.category?.slug === category;
+      const matchesQ =
+        !q ||
+        q.trim() === '' ||
+        c.title.toLowerCase().includes(q.trim().toLowerCase()) ||
+        (c.short_description || '').toLowerCase().includes(q.trim().toLowerCase());
+      return matchesCat && matchesQ;
+    });
   }
-
-  const { data: coursesData } = await query;
-  const courses: Course[] = (coursesData as unknown as Course[]) || [];
 
   return (
     <div className="py-12 space-y-10">
